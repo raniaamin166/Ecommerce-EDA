@@ -103,12 +103,53 @@ if uploaded_file:
 
             ax.set_title(f"{x_col} vs {y_col}")
             st.pyplot(fig)
-   
+
+  
+
     # -------------------
     # 4. Advanced Business Analysis
     # -------------------
+    elif menu == "🔥 Advanced Business Analysis":
+        if "CustomerID" in df.columns and "Sales" in df.columns:
+            # CLV
+            st.subheader("Customer Lifetime Value Distribution")
+            clv = df.groupby("CustomerID")["Sales"].sum()
+            fig, ax = plt.subplots()
+            sns.histplot(clv, kde=True, bins=30, ax=ax, color="darkcyan")
+            ax.set_title("CLV Distribution")
+            st.pyplot(fig)
 
-       # Sales Funnel (Static Example)
+        if "Product" in df.columns and "Sales" in df.columns:
+            # Pareto
+            st.subheader("Pareto Analysis (Products)")
+            sales_by_product = df.groupby("Product")["Sales"].sum().sort_values(ascending=False)
+            cum_percent = sales_by_product.cumsum() / sales_by_product.sum() * 100
+            fig, ax1 = plt.subplots()
+            sales_by_product.plot(kind="bar", ax=ax1, color="lightblue")
+            ax2 = ax1.twinx()
+            cum_percent.plot(ax=ax2, color="red", marker="D")
+            ax1.set_ylabel("Sales")
+            ax2.set_ylabel("Cumulative %")
+            ax1.set_title("Pareto Chart")
+            st.pyplot(fig)
+
+        if "CustomerID" in df.columns and "OrderDate" in df.columns and "Sales" in df.columns:
+            # RFM
+            st.subheader("RFM Segmentation")
+            df["OrderDate"] = pd.to_datetime(df["OrderDate"])
+            ref_date = df["OrderDate"].max() + pd.Timedelta(days=1)
+            rfm = df.groupby("CustomerID").agg({
+                "OrderDate": lambda x: (ref_date - x.max()).days,
+                "CustomerID": "count",
+                "Sales": "sum"
+            })
+            rfm.columns = ["Recency", "Frequency", "Monetary"]
+            fig, ax = plt.subplots()
+            sns.scatterplot(data=rfm, x="Recency", y="Frequency", size="Monetary", ax=ax, alpha=0.6)
+            ax.set_title("RFM Segmentation")
+            st.pyplot(fig)
+
+        # Sales Funnel (Static Example)
         st.subheader("Sales Funnel (Example)")
         funnel_data = {"Stage": ["Visitors", "Added to Cart", "Checkout", "Purchased"],
                        "Count": [1000, 600, 300, 150]}
@@ -117,4 +158,26 @@ if uploaded_file:
         sns.barplot(x="Count", y="Stage", data=funnel_df, ax=ax, palette="Blues_r")
         ax.set_title("Sales Funnel")
         st.pyplot(fig)
+
+        if "CustomerID" in df.columns and "OrderDate" in df.columns:
+            # Cohort
+            st.subheader("Cohort Retention Heatmap")
+            df["OrderMonth"] = df["OrderDate"].dt.to_period("M")
+            df["CohortMonth"] = df.groupby("CustomerID")["OrderMonth"].transform("min")
+            cohort = df.groupby(["CohortMonth", "OrderMonth"])["CustomerID"].nunique().reset_index()
+            cohort_pivot = cohort.pivot_table(index="CohortMonth", columns="OrderMonth", values="CustomerID")
+            cohort_pivot = cohort_pivot.divide(cohort_pivot.iloc[:, 0], axis=0)
+            fig, ax = plt.subplots(figsize=(10, 5))
+            sns.heatmap(cohort_pivot, annot=True, fmt=".0%", cmap="YlGnBu", ax=ax)
+            ax.set_title("Cohort Analysis")
+            st.pyplot(fig)
+
+st.subheader("📅 Daily Sales Trend")
+daily_sales = df.groupby(df["OrderDate"].dt.date)["Sales"].sum()
+fig, ax = plt.subplots()
+daily_sales.plot(ax=ax, color="navy", linewidth=1.5)
+ax.set_title("Daily Sales Trend")
+ax.set_xlabel("Date")
+ax.set_ylabel("Total Sales")
+st.pyplot(fig)
 
