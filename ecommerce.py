@@ -45,7 +45,7 @@ if uploaded_file:
     elif menu == "📈 Column Analysis":
         column = st.selectbox("Select a column for analysis", df.columns)
 
-        pd.api.types.is_numeric_dtype(df[column]):
+        if pd.api.types.is_numeric_dtype(df[column]):
             # Histogram
             fig, ax = plt.subplots()
             sns.histplot(df[column].dropna(), bins=20, color="skyblue", ax=ax)
@@ -58,7 +58,7 @@ if uploaded_file:
             ax.set_title(f"Boxplot of {column}")
             st.pyplot(fig)
 
-        
+        else:
             # Bar chart
             fig, ax = plt.subplots()
             df[column].value_counts().plot(kind="bar", ax=ax, color="coral")
