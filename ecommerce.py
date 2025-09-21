@@ -106,54 +106,107 @@ if uploaded_file:
             st.pyplot(fig)
 
     # -------------------
-    # 4. E-commerce Insights
     # -------------------
-    elif menu == "🛍️ E-commerce Insights":
-        if "OrderDate" in df.columns and "Sales" in df.columns:
-            df["OrderDate"] = pd.to_datetime(df["OrderDate"])
+# 4. E-commerce Insights (robust & simple)
+# -------------------
+elif menu == "🛍️ E-commerce Insights":
+    import matplotlib.dates as mdates
 
-            # Sales Over Time
-            st.subheader("Sales Over Time")
-            sales_time = df.groupby(df["OrderDate"].dt.to_period("M"))["Sales"].sum()
-            fig, ax = plt.subplots()
-            sales_time.plot(ax=ax, marker="o", color="teal")
+    # make a safe copy so we don't modify the original unexpectedly
+    df_ins = df.copy()
+
+    # required basic columns
+    if "OrderDate" in df_ins.columns and "Sales" in df_ins.columns:
+        # 1) Safe conversions
+        df_ins["OrderDate"] = pd.to_datetime(df_ins["OrderDate"], errors="coerce")
+        df_ins["Sales"] = pd.to_numeric(df_ins["Sales"], errors="coerce")
+
+        # 2) keep only usable rows
+        temp = df_ins.dropna(subset=["OrderDate", "Sales"]).copy()
+
+        if temp.empty:
+            st.warning("No valid rows after parsing OrderDate and Sales. Check formats or column names.")
+        else:
+            # --- Sales Over Time (monthly) ---
+            monthly_sales = temp.set_index("OrderDate").resample("M")["Sales"].sum().sort_index()
+
+            st.subheader("📈 Monthly Sales Trend")
+            fig, ax = plt.subplots(figsize=(9, 4))
+            ax.plot(monthly_sales.index, monthly_sales.values, marker="o", linewidth=2)
             ax.set_title("Monthly Sales Trend")
+            ax.set_xlabel("Month")
+            ax.set_ylabel("Total Sales")
+            ax.xaxis.set_major_formatter(mdates.DateFormatter("%Y-%m"))
+            plt.xticks(rotation=45)
+            plt.tight_layout()
             st.pyplot(fig)
 
-            # Sales Heatmap (Day vs Hour)
-            st.subheader("Sales Heatmap (Day vs Hour)")
-            df["Day"] = df["OrderDate"].dt.day_name()
-            df["Hour"] = df["OrderDate"].dt.hour
-            pivot = df.pivot_table(index="Day", columns="Hour", values="Sales", aggfunc="sum")
+            # quick interactive alternative
+            st.write("Interactive view:")
+            st.line_chart(monthly_sales)
+
+            # --- Sales Heatmap (Day vs Hour) ---
+            st.subheader("📊 Sales Heatmap (Day vs Hour)")
+            temp["Day"] = temp["OrderDate"].dt.day_name()
+            temp["Hour"] = temp["OrderDate"].dt.hour
+
+            pivot = temp.pivot_table(index="Day", columns="Hour", values="Sales", aggfunc="sum", fill_value=0)
+
+            # ensure days are in natural order
+            days_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+            pivot = pivot.reindex(days_order).fillna(0)
+
             fig, ax = plt.subplots(figsize=(10, 4))
             sns.heatmap(pivot, cmap="YlGnBu", ax=ax)
-            ax.set_title("Sales Heatmap")
+            ax.set_title("Sales by Day of Week and Hour")
             st.pyplot(fig)
 
-        if "Product" in df.columns and "Sales" in df.columns:
-            # Top Products
-            st.subheader("Top 10 Products by Sales")
-            top_products = df.groupby("Product")["Sales"].sum().nlargest(10)
-            fig, ax = plt.subplots()
+    else:
+        st.info("To show Sales Over Time and Heatmap, dataset must contain 'OrderDate' and 'Sales' columns.")
+
+    # --- Top products by revenue (simple & safe) ---
+    if "Product" in df_ins.columns:
+        st.subheader("🏆 Top 10 Products by Revenue (or Sales)")
+        # create Revenue column if possible
+        if "Revenue" not in df_ins.columns:
+            if {"Quantity", "UnitPrice"}.issubset(df_ins.columns):
+                df_ins["Revenue"] = pd.to_numeric(df_ins["Quantity"], errors="coerce") * pd.to_numeric(df_ins["UnitPrice"], errors="coerce")
+            else:
+                # fallback to Sales
+                df_ins["Revenue"] = pd.to_numeric(df_ins["Sales"], errors="coerce")
+
+        prod_agg = df_ins.dropna(subset=["Product", "Revenue"]).groupby("Product")["Revenue"].sum()
+        if prod_agg.empty:
+            st.info("No product revenue data available.")
+        else:
+            top_products = prod_agg.sort_values(ascending=True).tail(10)  # ascending->barh shows largest at top
+            fig, ax = plt.subplots(figsize=(8, 4))
             top_products.plot(kind="barh", ax=ax, color="purple")
-            ax.set_title("Top Products by Sales")
+            ax.set_xlabel("Revenue")
+            ax.set_ylabel("Product")
+            ax.set_title("Top 10 Products by Revenue")
+            plt.tight_layout()
             st.pyplot(fig)
 
-        if "Category" in df.columns and "Sales" in df.columns:
-            # Sales by Category
-            st.subheader("Sales by Category")
-            fig, ax = plt.subplots()
-            sns.boxplot(x="Category", y="Sales", data=df, ax=ax, palette="Set2")
-            ax.set_title("Sales by Category")
-            st.pyplot(fig)
+    # --- Revenue by category (if available) ---
+    if "Category" in df_ins.columns:
+        st.subheader("📂 Revenue by Category")
+        if "Revenue" not in df_ins.columns:
+            df_ins["Revenue"] = pd.to_numeric(df_ins["Sales"], errors="coerce")
+        cat_agg = df_ins.dropna(subset=["Category", "Revenue"]).groupby("Category")["Revenue"].sum().sort_values(ascending=False)
+        if cat_agg.empty:
+            st.info("No category revenue data available.")
+        else:
+            st.bar_chart(cat_agg)
 
-        if "Region" in df.columns:
-            # Orders by Region
-            st.subheader("Orders by Region")
-            fig, ax = plt.subplots()
-            df["Region"].value_counts().plot(kind="bar", ax=ax, color="orange")
-            ax.set_title("Orders by Region")
-            st.pyplot(fig)
+    # --- Orders / counts by region (if available) ---
+    if "Region" in df_ins.columns:
+        st.subheader("📍 Orders by Region")
+        region_counts = df_ins["Region"].dropna().value_counts()
+        if region_counts.empty:
+            st.info("No Region data available.")
+        else:
+            st.bar_chart(region_counts)
 
     # -------------------
     # 5. Advanced Business Analysis
