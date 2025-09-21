@@ -22,7 +22,6 @@ if uploaded_file:
         "📊 Overview",
         "📈 Column Analysis",
         "📉 Correlation & Regression",
-        "🛍️ E-commerce Insights",
         "🔥 Advanced Business Analysis"
     ])
 
