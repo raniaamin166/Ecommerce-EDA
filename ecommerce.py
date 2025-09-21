@@ -172,12 +172,29 @@ if uploaded_file:
             ax.set_title("Cohort Analysis")
             st.pyplot(fig)
 
-st.subheader("📅 Daily Sales Trend")
-daily_sales = df.groupby(df["OrderDate"].dt.date)["Sales"].sum()
-fig, ax = plt.subplots()
-daily_sales.plot(ax=ax, color="navy", linewidth=1.5)
-ax.set_title("Daily Sales Trend")
-ax.set_xlabel("Date")
-ax.set_ylabel("Total Sales")
-st.pyplot(fig)
+      # ✅ Daily Sales Trend (fixed)
+if "OrderDate" in df.columns and "Sales" in df.columns:
+    # Convert columns safely
+    df["OrderDate"] = pd.to_datetime(df["OrderDate"], errors="coerce")
+    df["Sales"] = pd.to_numeric(df["Sales"], errors="coerce")
+
+    # Drop invalid rows
+    temp = df.dropna(subset=["OrderDate", "Sales"]).copy()
+
+    if not temp.empty:
+        st.subheader("📅 Daily Sales Trend")
+        daily_sales = temp.groupby(temp["OrderDate"].dt.date)["Sales"].sum()
+
+        fig, ax = plt.subplots(figsize=(10, 4))
+        ax.plot(daily_sales.index, daily_sales.values, color="navy", linewidth=1.5, marker="o")
+        ax.set_title("Daily Sales Trend")
+        ax.set_xlabel("Date")
+        ax.set_ylabel("Total Sales")
+
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        st.pyplot(fig)
+    else:
+        st.warning("No valid data found for OrderDate and Sales.")
+
 
