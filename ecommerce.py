@@ -172,33 +172,43 @@ if uploaded_file:
             ax.set_title("Cohort Analysis")
             st.pyplot(fig)
 
-# ✅ Daily Sales Trend (Debugged)
+import matplotlib.pyplot as plt
+import streamlit as st
+import pandas as pd
+
+# -------------------------------
+# 📅 Daily Sales Trend (Safe Code)
+# -------------------------------
 if "OrderDate" in df.columns and "Sales" in df.columns:
-    # Convert safely
+    # Ensure correct datatypes
     df["OrderDate"] = pd.to_datetime(df["OrderDate"], errors="coerce")
     df["Sales"] = pd.to_numeric(df["Sales"], errors="coerce")
 
-    # Drop invalid rows
+    # Drop invalids
     temp = df.dropna(subset=["OrderDate", "Sales"]).copy()
 
-    if not temp.empty:
+    if len(temp) > 0:
         st.subheader("📅 Daily Sales Trend")
 
-        # Group by date
-        daily_sales = temp.groupby(temp["OrderDate"].dt.date)["Sales"].sum()
+        # Aggregate sales by actual date
+        daily_sales = (
+            temp.groupby(temp["OrderDate"].dt.strftime("%Y-%m-%d"))["Sales"].sum()
+        )
 
-        # Plot
-        fig, ax = plt.subplots(figsize=(10, 4))
-        ax.plot(daily_sales.index, daily_sales.values, color="navy", linewidth=1.5, marker="o")
-        ax.set_title("Daily Sales Trend")
+        # Make plot
+        fig, ax = plt.subplots(figsize=(12, 4))
+        ax.plot(daily_sales.index, daily_sales.values, color="navy", marker="o", linewidth=1.5)
+        ax.set_title("Daily Sales Trend", fontsize=14, weight="bold")
         ax.set_xlabel("Date")
         ax.set_ylabel("Total Sales")
-        plt.xticks(rotation=45)
-        plt.tight_layout()
+        ax.tick_params(axis="x", rotation=45)
 
+        # Render in Streamlit
         st.pyplot(fig)
     else:
-        st.warning("⚠️ No valid OrderDate and Sales data found.")
+        st.warning("⚠️ No valid `OrderDate` and `Sales` rows available to plot.")
+
+ 
 
 
 
