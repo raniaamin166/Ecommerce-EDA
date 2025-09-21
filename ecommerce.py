@@ -177,25 +177,30 @@ import streamlit as st
 import pandas as pd
 
 # -------------------------------
-# 📅 Daily Sales Trend (Safe Code)
+# 📅 Daily Sales Trend (Debug-Safe)
 # -------------------------------
 if "OrderDate" in df.columns and "Sales" in df.columns:
-    # Ensure correct datatypes
+    # Convert columns safely
     df["OrderDate"] = pd.to_datetime(df["OrderDate"], errors="coerce")
     df["Sales"] = pd.to_numeric(df["Sales"], errors="coerce")
 
     # Drop invalids
     temp = df.dropna(subset=["OrderDate", "Sales"]).copy()
 
+    # Debugging info
+    st.write("✅ Rows after cleaning:", len(temp))
+    st.write("📅 Date range:", temp["OrderDate"].min(), "→", temp["OrderDate"].max())
+    st.write("🔢 Sales summary:", temp["Sales"].describe())
+
     if len(temp) > 0:
         st.subheader("📅 Daily Sales Trend")
 
-        # Aggregate sales by actual date
-        daily_sales = (
-            temp.groupby(temp["OrderDate"].dt.strftime("%Y-%m-%d"))["Sales"].sum()
-        )
+        # Aggregate by date
+        daily_sales = temp.groupby(temp["OrderDate"].dt.date)["Sales"].sum()
 
-        # Make plot
+        st.write("📝 Daily Sales sample:", daily_sales.head())  # debug print
+
+        # Plot
         fig, ax = plt.subplots(figsize=(12, 4))
         ax.plot(daily_sales.index, daily_sales.values, color="navy", marker="o", linewidth=1.5)
         ax.set_title("Daily Sales Trend", fontsize=14, weight="bold")
@@ -203,10 +208,14 @@ if "OrderDate" in df.columns and "Sales" in df.columns:
         ax.set_ylabel("Total Sales")
         ax.tick_params(axis="x", rotation=45)
 
-        # Render in Streamlit
         st.pyplot(fig)
     else:
-        st.warning("⚠️ No valid `OrderDate` and `Sales` rows available to plot.")
+        st.error("⚠️ No valid OrderDate & Sales rows found after cleaning!")
+else:
+    st.error("⚠️ Columns 'OrderDate' and 'Sales' not found in dataset!")
+
+
+
 
  
 
