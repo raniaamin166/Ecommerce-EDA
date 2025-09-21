@@ -109,16 +109,23 @@ if uploaded_file:
     # 4. E-commerce Insights
     # -------------------
     elif menu == "🛍️ E-commerce Insights":
-        if "OrderDate" in df.columns and "Sales" in df.columns:
-            df["OrderDate"] = pd.to_datetime(df["OrderDate"])
+    if "OrderDate" in df.columns and "Sales" in df.columns:
+        # Convert OrderDate to datetime
+        df["OrderDate"] = pd.to_datetime(df["OrderDate"], errors="coerce")
 
-            # Sales Over Time
-            st.subheader("Sales Over Time")
-            sales_time = df.groupby(df["OrderDate"].dt.to_period("M"))["Sales"].sum()
-            fig, ax = plt.subplots()
-            sales_time.plot(ax=ax, marker="o", color="teal")
-            ax.set_title("Monthly Sales Trend")
-            st.pyplot(fig)
+        # Group sales by month
+        sales_time = df.groupby(df["OrderDate"].dt.to_period("M"))["Sales"].sum()
+        sales_time.index = sales_time.index.astype(str)  # convert PeriodIndex to string
+
+        # Plot sales trend
+        st.subheader("📈 Sales Over Time")
+        fig, ax = plt.subplots()
+        sales_time.plot(ax=ax, marker="o", color="teal", linewidth=2)
+        ax.set_title("Monthly Sales Trend")
+        ax.set_xlabel("Month")
+        ax.set_ylabel("Total Sales")
+        st.pyplot(fig)
+
 
             # Sales Heatmap (Day vs Hour)
             st.subheader("Sales Heatmap (Day vs Hour)")
