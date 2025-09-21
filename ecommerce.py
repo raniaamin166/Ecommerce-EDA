@@ -172,29 +172,6 @@ if uploaded_file:
             ax.set_title("Cohort Analysis")
             st.pyplot(fig)
 
-import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-st.set_page_config(page_title="E-Commerce Dashboard", layout="wide")
-st.title("🛒 E-Commerce Data Analysis Dashboard")
-
-# File uploader
-uploaded_file = st.sidebar.file_uploader("Upload a CSV file", type=["csv"])
-
-if uploaded_file:
-    df = pd.read_csv(uploaded_file)
-
-    # Sidebar navigation
-    menu = st.sidebar.radio("Select Section", [
-        "📊 Overview",
-        "🛍️ E-commerce Insights"
-    ])
-
-    # -------------------
-    # 📊 Overview
-    # -------------------
 
 
 
