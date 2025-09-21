@@ -108,54 +108,60 @@ if uploaded_file:
     # -------------------
     # 4. E-commerce Insights
     # -------------------
-    elif menu == "🛍️ E-commerce Insights":
-        if "OrderDate" in df.columns and "Sales" in df.columns:
-            df["OrderDate"] = pd.to_datetime(df["OrderDate"])
+# 4. E-commerce Insights
+# ----------------------
+elif menu == "🛍️ E-commerce Insights":
+    if "OrderDate" in df.columns and "Sales" in df.columns:
+        # Convert to datetime safely
+        df["OrderDate"] = pd.to_datetime(df["OrderDate"], errors="coerce")
+        df = df.dropna(subset=["OrderDate", "Sales"])  # drop rows with invalid dates
 
-            # Sales Over Time
-            st.subheader("Sales Over Time")
-            sales_time = df.groupby(df["OrderDate"].dt.to_period("M"))["Sales"].sum()
-            sales_time.index = sales_time.index.to_timestamp()  # ✅ Fix for plotting
-            fig, ax = plt.subplots()
-            sales_time.plot(ax=ax, marker="o", color="teal")
-            ax.set_title("Monthly Sales Trend")
-            st.pyplot(fig)
+        # --- Sales Over Time ---
+        st.subheader("📈 Sales Over Time")
+        sales_time = df.groupby(df["OrderDate"].dt.to_period("M"))["Sales"].sum()
+        sales_time.index = sales_time.index.to_timestamp()  # convert PeriodIndex → Timestamp
+        fig, ax = plt.subplots()
+        sales_time.plot(ax=ax, marker="o", color="teal", linewidth=2)
+        ax.set_title("Monthly Sales Trend")
+        ax.set_xlabel("Month")
+        ax.set_ylabel("Total Sales")
+        st.pyplot(fig)
 
-            # Sales Heatmap (Day vs Hour)
-            st.subheader("Sales Heatmap (Day vs Hour)")
-            df["Day"] = df["OrderDate"].dt.day_name()
-            df["Hour"] = df["OrderDate"].dt.hour
-            day_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-            pivot = df.pivot_table(index="Day", columns="Hour", values="Sales", aggfunc="sum").reindex(day_order)
-            fig, ax = plt.subplots(figsize=(10, 4))
-            sns.heatmap(pivot, cmap="YlGnBu", ax=ax)
-            ax.set_title("Sales Heatmap")
-            st.pyplot(fig)
+        # --- Sales Heatmap (Day vs Hour) ---
+        st.subheader("🔥 Sales Heatmap (Day vs Hour)")
+        df["Day"] = df["OrderDate"].dt.day_name()
+        df["Hour"] = df["OrderDate"].dt.hour
+        pivot = df.pivot_table(index="Day", columns="Hour", values="Sales", aggfunc="sum")
+        fig, ax = plt.subplots(figsize=(10, 4))
+        sns.heatmap(pivot, cmap="YlGnBu", ax=ax)
+        ax.set_title("Sales Heatmap")
+        st.pyplot(fig)
 
-        if "Product" in df.columns and "Sales" in df.columns:
-            # Top Products
-            st.subheader("Top 10 Products by Sales")
-            top_products = df.groupby("Product")["Sales"].sum().nlargest(10)
-            fig, ax = plt.subplots()
-            top_products.plot(kind="barh", ax=ax, color="purple")
-            ax.set_title("Top Products by Sales")
-            st.pyplot(fig)
+    if "Product" in df.columns and "Sales" in df.columns:
+        # --- Top Products ---
+        st.subheader("🏆 Top 10 Products by Sales")
+        top_products = df.groupby("Product")["Sales"].sum().nlargest(10)
+        fig, ax = plt.subplots()
+        top_products.plot(kind="barh", ax=ax, color="purple")
+        ax.set_title("Top Products by Sales")
+        st.pyplot(fig)
 
-        if "Category" in df.columns and "Sales" in df.columns:
-            # Sales by Category
-            st.subheader("Sales by Category")
-            fig, ax = plt.subplots()
-            sns.boxplot(x="Category", y="Sales", data=df, ax=ax, palette="Set2")
-            ax.set_title("Sales by Category")
-            st.pyplot(fig)
+    if "Category" in df.columns and "Sales" in df.columns:
+        # --- Sales by Category ---
+        st.subheader("📦 Sales by Category")
+        fig, ax = plt.subplots()
+        sns.boxplot(x="Category", y="Sales", data=df, ax=ax, palette="Set2")
+        ax.set_title("Sales by Category")
+        st.pyplot(fig)
 
-        if "Region" in df.columns:
-            # Orders by Region
-            st.subheader("Orders by Region")
-            fig, ax = plt.subplots()
-            df["Region"].value_counts().plot(kind="bar", ax=ax, color="orange")
-            ax.set_title("Orders by Region")
-            st.pyplot(fig)
+    if "Region" in df.columns:
+        # --- Orders by Region ---
+        st.subheader("🌍 Orders by Region")
+        fig, ax = plt.subplots()
+        df["Region"].value_counts().plot(kind="bar", ax=ax, color="orange")
+        ax.set_title("Orders by Region")
+        st.pyplot(fig)
+
 
     # -------------------
     # 5. Advanced Business Analysis
