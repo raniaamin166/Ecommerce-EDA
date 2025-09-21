@@ -45,7 +45,7 @@ if uploaded_file:
     elif menu == "📈 Column Analysis":
         column = st.selectbox("Select a column for analysis", df.columns)
 
-        if pd.api.types.is_numeric_dtype(df[column]):
+        pd.api.types.is_numeric_dtype(df[column]):
             # Histogram
             fig, ax = plt.subplots()
             sns.histplot(df[column].dropna(), bins=20, color="skyblue", ax=ax)
@@ -58,7 +58,7 @@ if uploaded_file:
             ax.set_title(f"Boxplot of {column}")
             st.pyplot(fig)
 
-        else:
+        
             # Bar chart
             fig, ax = plt.subplots()
             df[column].value_counts().plot(kind="bar", ax=ax, color="coral")
@@ -109,23 +109,16 @@ if uploaded_file:
     # 4. E-commerce Insights
     # -------------------
     elif menu == "🛍️ E-commerce Insights":
-    if "OrderDate" in df.columns and "Sales" in df.columns:
-        # Convert OrderDate to datetime
-        df["OrderDate"] = pd.to_datetime(df["OrderDate"], errors="coerce")
+        if "OrderDate" in df.columns and "Sales" in df.columns:
+            df["OrderDate"] = pd.to_datetime(df["OrderDate"])
 
-        # Group sales by month
-        sales_time = df.groupby(df["OrderDate"].dt.to_period("M"))["Sales"].sum()
-        sales_time.index = sales_time.index.astype(str)  # convert PeriodIndex to string
-
-        # Plot sales trend
-        st.subheader("📈 Sales Over Time")
-        fig, ax = plt.subplots()
-        sales_time.plot(ax=ax, marker="o", color="teal", linewidth=2)
-        ax.set_title("Monthly Sales Trend")
-        ax.set_xlabel("Month")
-        ax.set_ylabel("Total Sales")
-        st.pyplot(fig)
-
+            # Sales Over Time
+            st.subheader("Sales Over Time")
+            sales_time = df.groupby(df["OrderDate"].dt.to_period("M"))["Sales"].sum()
+            fig, ax = plt.subplots()
+            sales_time.plot(ax=ax, marker="o", color="teal")
+            ax.set_title("Monthly Sales Trend")
+            st.pyplot(fig)
 
             # Sales Heatmap (Day vs Hour)
             st.subheader("Sales Heatmap (Day vs Hour)")
