@@ -172,47 +172,32 @@ if uploaded_file:
             ax.set_title("Cohort Analysis")
             st.pyplot(fig)
 
-import matplotlib.pyplot as plt
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
-# -------------------------------
-# 📅 Daily Sales Trend (Debug-Safe)
-# -------------------------------
-if "OrderDate" in df.columns and "Sales" in df.columns:
-    # Convert columns safely
-    df["OrderDate"] = pd.to_datetime(df["OrderDate"], errors="coerce")
-    df["Sales"] = pd.to_numeric(df["Sales"], errors="coerce")
+st.set_page_config(page_title="E-Commerce Dashboard", layout="wide")
+st.title("🛒 E-Commerce Data Analysis Dashboard")
 
-    # Drop invalids
-    temp = df.dropna(subset=["OrderDate", "Sales"]).copy()
+# File uploader
+uploaded_file = st.sidebar.file_uploader("Upload a CSV file", type=["csv"])
 
-    # Debugging info
-    st.write("✅ Rows after cleaning:", len(temp))
-    st.write("📅 Date range:", temp["OrderDate"].min(), "→", temp["OrderDate"].max())
-    st.write("🔢 Sales summary:", temp["Sales"].describe())
+if uploaded_file:
+    df = pd.read_csv(uploaded_file)
 
-    if len(temp) > 0:
-        st.subheader("📅 Daily Sales Trend")
+    # Sidebar navigation
+    menu = st.sidebar.radio("Select Section", [
+        "📊 Overview",
+        "🛍️ E-commerce Insights"
+    ])
 
-        # Aggregate by date
-        daily_sales = temp.groupby(temp["OrderDate"].dt.date)["Sales"].sum()
+    # -------------------
+    # 📊 Overview
+    # -------------------
 
-        st.write("📝 Daily Sales sample:", daily_sales.head())  # debug print
 
-        # Plot
-        fig, ax = plt.subplots(figsize=(12, 4))
-        ax.plot(daily_sales.index, daily_sales.values, color="navy", marker="o", linewidth=1.5)
-        ax.set_title("Daily Sales Trend", fontsize=14, weight="bold")
-        ax.set_xlabel("Date")
-        ax.set_ylabel("Total Sales")
-        ax.tick_params(axis="x", rotation=45)
 
-        st.pyplot(fig)
-    else:
-        st.error("⚠️ No valid OrderDate & Sales rows found after cleaning!")
-else:
-    st.error("⚠️ Columns 'OrderDate' and 'Sales' not found in dataset!")
 
 
 
